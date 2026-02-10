@@ -1,205 +1,172 @@
 package cwr.cutomIterm.GUI;
 
-import cwr.cutomIterm.Entity_Wand.EntityWandPlugin;
-import cwr.cutomIterm.recipe.RecipeManager;
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityPickupItemEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
-class RecipeUnlockListener implements Listener {
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
-    private final EntityWandPlugin plugin;
+public class GUIConfig {
 
-    public RecipeUnlockListener(EntityWandPlugin plugin) {
-        this.plugin = plugin;
+    private static final Map<String, GUIItem> customItems = new HashMap<>();
+
+    static {
+        registerItem("entity_wand", Material.STICK, "§bEntity Wand",
+                Arrays.asList("§7Hold right-click to move entities",
+                        "§7Durability: §e1000",
+                        "",
+                        "§aClick to view recipe"));
+
+        registerItem("warden_sword", Material.NETHERITE_SWORD, "§5Warden Sword",
+                Arrays.asList("§7Attack Damage: §c11",
+                        "§7Attack Speed: §e2.5",
+                        "",
+                        "§dAbility: Warden Sonic Boom",
+                        "§8Right-click to activate (20s cooldown)",
+                        "",
+                        "§aClick to view recipe"));
+
+        registerItem("fly_voucher", Material.FEATHER, "§b§lFly Voucher",
+                Arrays.asList("§7Right-click to gain flight",
+                        "§7Duration: §e30 minutes",
+                        "§7One-time use item",
+                        "",
+                        "§aClick to view recipe"));
+
+        registerItem("recipe_book", Material.KNOWLEDGE_BOOK, "§6§lRecipe Book",
+                Arrays.asList("§7Right-click to open",
+                        "§7Custom Item Recipes",
+                        "",
+                        "§eContains all custom crafting",
+                        "§erecipes for your items",
+                        "",
+                        "§aClick to view recipe"));
+
+        // ADDED: Power of Gamiya Bow
+        registerItem("power_bow", Material.BOW, "§6§lPower of Gamiya",
+                Arrays.asList("§6§lDivine Tracking Bow",
+                        "",
+                        "§7Special Ability: §eAuto-Tracking Arrows",
+                        "§8Arrows automatically track nearest entity",
+                        "§8and summon lightning on hit",
+                        "",
+                        "§aClick to view recipe"));
     }
 
-    @EventHandler
-    public void onEntityPickupItem(EntityPickupItemEvent event) {
-        if (!(event.getEntity() instanceof Player)) {
-            return;
-        }
-
-        Player player = (Player) event.getEntity();
-        Material pickedUpMaterial = event.getItem().getItemStack().getType();
-
-        // Check for Entity Wand recipe unlocks
-        if (pickedUpMaterial == Material.GOLD_INGOT || pickedUpMaterial == Material.STICK) {
-            unlockEntityWandRecipe(player);
-        }
-
-        // Check for Warden Sword recipe unlocks
-        if (pickedUpMaterial == Material.ECHO_SHARD || pickedUpMaterial == Material.SCULK_CATALYST) {
-            unlockWardenSwordRecipe(player);
-        }
-
-        // Check for Fly Voucher recipe unlocks
-        if (pickedUpMaterial == Material.FEATHER ||
-                pickedUpMaterial == Material.EXPERIENCE_BOTTLE ||
-                pickedUpMaterial == Material.EMERALD ||
-                pickedUpMaterial == Material.DIAMOND) {
-            unlockFlyVoucherRecipe(player);
-        }
-
-        // Check for Recipe Book recipe unlocks
-        if (pickedUpMaterial == Material.BOOK || pickedUpMaterial == Material.CRAFTING_TABLE) {
-            unlockRecipeBookRecipe(player);
-        }
-
-        // NEW: Check for Power Bow recipe unlocks
-        if (pickedUpMaterial == Material.BLAZE_ROD ||
-                pickedUpMaterial == Material.BOW ||
-                pickedUpMaterial == Material.REDSTONE ||
-                pickedUpMaterial == Material.ENDER_PEARL) {
-            unlockPowerBowRecipe(player);
-        }
+    private static void registerItem(String id, Material material, String name, java.util.List<String> lore) {
+        customItems.put(id, new GUIItem(id, material, name, lore));
     }
 
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-        checkAndUnlockRecipes(player);
+    public static Map<String, GUIItem> getCustomItems() {
+        return new HashMap<>(customItems);
     }
 
-    private void checkAndUnlockRecipes(Player player) {
-        boolean hasGoldOrStick = player.getInventory().contains(Material.GOLD_INGOT) ||
-                player.getInventory().contains(Material.STICK);
-        boolean hasEchoOrCatalyst = player.getInventory().contains(Material.ECHO_SHARD) ||
-                player.getInventory().contains(Material.SCULK_CATALYST);
-        boolean hasVoucherIngredient = player.getInventory().contains(Material.FEATHER) ||
-                player.getInventory().contains(Material.EXPERIENCE_BOTTLE) ||
-                player.getInventory().contains(Material.EMERALD) ||
-                player.getInventory().contains(Material.DIAMOND);
-        boolean hasRecipeBookIngredient = player.getInventory().contains(Material.BOOK) ||
-                player.getInventory().contains(Material.CRAFTING_TABLE);
-        // NEW: Check for Power Bow ingredients
-        boolean hasPowerBowIngredient = player.getInventory().contains(Material.BLAZE_ROD) ||
-                player.getInventory().contains(Material.BOW) ||
-                player.getInventory().contains(Material.REDSTONE) ||
-                player.getInventory().contains(Material.ENDER_PEARL);
-
-        if (hasGoldOrStick) {
-            unlockEntityWandRecipe(player);
-        }
-        if (hasEchoOrCatalyst) {
-            unlockWardenSwordRecipe(player);
-        }
-        if (hasVoucherIngredient) {
-            unlockFlyVoucherRecipe(player);
-        }
-        if (hasRecipeBookIngredient) {
-            unlockRecipeBookRecipe(player);
-        }
-        // NEW: Unlock Power Bow recipe
-        if (hasPowerBowIngredient) {
-            unlockPowerBowRecipe(player);
-        }
+    public static GUIItem getItem(String id) {
+        return customItems.get(id);
     }
 
-    private void unlockEntityWandRecipe(Player player) {
-        try {
-            if (player.hasDiscoveredRecipe(RecipeManager.WAND_RECIPE_KEY)) {
-                return;
+    public static ItemStack createDisplayItem(GUIItem guiItem) {
+        ItemStack item = new ItemStack(guiItem.getMaterial());
+        ItemMeta meta = item.getItemMeta();
+
+        if (meta != null) {
+            meta.setDisplayName(guiItem.getName());
+            meta.setLore(guiItem.getLore());
+
+            // Add enchantment glint to special items
+            if (guiItem.getId().equals("fly_voucher") ||
+                    guiItem.getId().equals("recipe_book") ||
+                    guiItem.getId().equals("warden_sword") ||
+                    guiItem.getId().equals("power_bow")) {
+                meta.setEnchantmentGlintOverride(true);
             }
 
-            if (plugin.getServer().getRecipe(RecipeManager.WAND_RECIPE_KEY) != null) {
-                player.discoverRecipe(RecipeManager.WAND_RECIPE_KEY);
-                plugin.getLogger().info("Unlocked Entity Wand recipe for player: " + player.getName());
-
-                player.sendMessage("§aYou've discovered the §bEntity Wand§a recipe!");
-            }
-        } catch (Exception e) {
-            plugin.getLogger().warning("Failed to unlock Entity Wand recipe: " + e.getMessage());
+            item.setItemMeta(meta);
         }
+
+        return item;
     }
 
-    private void unlockWardenSwordRecipe(Player player) {
-        try {
-            if (player.hasDiscoveredRecipe(RecipeManager.SWORD_RECIPE_KEY)) {
-                return;
-            }
+    public static Map<Character, Material> getRecipePattern(String itemId) {
+        Map<Character, Material> pattern = new HashMap<>();
 
-            if (plugin.getServer().getRecipe(RecipeManager.SWORD_RECIPE_KEY) != null) {
-                player.discoverRecipe(RecipeManager.SWORD_RECIPE_KEY);
-                plugin.getLogger().info("Unlocked Warden Sword recipe for player: " + player.getName());
+        switch (itemId) {
+            case "entity_wand":
+                pattern.put('G', Material.GOLD_INGOT);
+                pattern.put('S', Material.STICK);
+                break;
 
-                player.sendMessage("§aYou've discovered the §5Warden Sword§a recipe!");
-            }
-        } catch (Exception e) {
-            plugin.getLogger().warning("Failed to unlock Warden Sword recipe: " + e.getMessage());
+            case "warden_sword":
+                pattern.put('E', Material.ECHO_SHARD);
+                pattern.put('S', Material.SCULK_CATALYST);
+                break;
+
+            case "fly_voucher":
+                pattern.put('B', Material.EXPERIENCE_BOTTLE);
+                pattern.put('F', Material.FEATHER);
+                pattern.put('E', Material.EMERALD);
+                pattern.put('D', Material.DIAMOND);
+                break;
+
+            case "recipe_book":
+                pattern.put('B', Material.BOOK);
+                pattern.put('C', Material.CRAFTING_TABLE);
+                break;
+
+            // ADDED: Power Bow recipe pattern
+            case "power_bow":
+                pattern.put('b', Material.BLAZE_ROD);
+                pattern.put('B', Material.BOW);
+                pattern.put('r', Material.REDSTONE);
+                pattern.put('e', Material.ENDER_PEARL);
+                break;
+
+            default:
+                pattern.put('?', Material.BARRIER);
         }
+
+        return pattern;
     }
 
-    private void unlockFlyVoucherRecipe(Player player) {
-        try {
-            if (player.hasDiscoveredRecipe(RecipeManager.VOUCHER_RECIPE_KEY)) {
-                return;
-            }
+    public static String[] getRecipeShape(String itemId) {
+        switch (itemId) {
+            case "entity_wand":
+                return new String[]{"GGG", "GSG", "GGG"};
 
-            if (plugin.getServer().getRecipe(RecipeManager.VOUCHER_RECIPE_KEY) != null) {
-                player.discoverRecipe(RecipeManager.VOUCHER_RECIPE_KEY);
-                plugin.getLogger().info("Unlocked Fly Voucher recipe for player: " + player.getName());
+            case "warden_sword":
+                return new String[]{" E ", " E ", " S "};
 
-                player.sendMessage("§aYou've discovered the §bFly Voucher§a recipe!");
-                player.sendMessage("§7Craft it with: §eExp Bottles, Feather, Emerald, Diamond");
-            }
-        } catch (Exception e) {
-            plugin.getLogger().warning("Failed to unlock Fly Voucher recipe: " + e.getMessage());
-        }
-    }
+            case "fly_voucher":
+                return new String[]{"BBB", "BFB", "EDE"};
 
-    private void unlockRecipeBookRecipe(Player player) {
-        try {
-            if (player.hasDiscoveredRecipe(RecipeManager.RECIPE_BOOK_RECIPE_KEY)) {
-                return;
-            }
+            case "recipe_book":
+                return new String[]{"   ", " BC", "   "};
 
-            if (plugin.getServer().getRecipe(RecipeManager.RECIPE_BOOK_RECIPE_KEY) != null) {
-                player.discoverRecipe(RecipeManager.RECIPE_BOOK_RECIPE_KEY);
-                plugin.getLogger().info("Unlocked Recipe Book recipe for player: " + player.getName());
+            // ADDED: Power Bow recipe shape (as specified: "b r", "eBr", "b r")
+            case "power_bow":
+                return new String[]{"b r", "eBr", "b r"};
 
-                player.sendMessage("§aYou've discovered the §6Recipe Book§a recipe!");
-            }
-        } catch (Exception e) {
-            plugin.getLogger().warning("Failed to unlock Recipe Book recipe: " + e.getMessage());
+            default:
+                return new String[]{"???", "???", "???"};
         }
     }
 
-    // NEW: Method to unlock Power Bow recipe
-    private void unlockPowerBowRecipe(Player player) {
-        try {
-            if (player.hasDiscoveredRecipe(RecipeManager.POWER_BOW_RECIPE_KEY)) {
-                return;
-            }
-
-            if (plugin.getServer().getRecipe(RecipeManager.POWER_BOW_RECIPE_KEY) != null) {
-                player.discoverRecipe(RecipeManager.POWER_BOW_RECIPE_KEY);
-                plugin.getLogger().info("Unlocked Power of Gamiya Bow recipe for player: " + player.getName());
-
-                player.sendMessage("§aYou've discovered the §6Power of Gamiya§a recipe!");
-                player.sendMessage("§7Craft it with: §eBlaze Rod, Bow, Redstone, Ender Pearl");
-            }
-        } catch (Exception e) {
-            plugin.getLogger().warning("Failed to unlock Power Bow recipe: " + e.getMessage());
-        }
-    }
-
-    public static void unlockAllCustomRecipes(Player player, EntityWandPlugin plugin) {
-        try {
-            player.discoverRecipe(RecipeManager.WAND_RECIPE_KEY);
-            player.discoverRecipe(RecipeManager.SWORD_RECIPE_KEY);
-            player.discoverRecipe(RecipeManager.VOUCHER_RECIPE_KEY);
-            player.discoverRecipe(RecipeManager.RECIPE_BOOK_RECIPE_KEY);
-            player.discoverRecipe(RecipeManager.POWER_BOW_RECIPE_KEY); // ADDED
-
-            plugin.getLogger().info("Manually unlocked all custom recipes for player: " + player.getName());
-            player.sendMessage("§aAll custom recipes have been unlocked!");
-
-        } catch (Exception e) {
-            plugin.getLogger().warning("Failed to unlock all custom recipes: " + e.getMessage());
+    public static String getRecipeDescription(String itemId) {
+        switch (itemId) {
+            case "entity_wand":
+                return "§e8 Gold Ingots around 1 Stick";
+            case "warden_sword":
+                return "§e2 Echo Shards + 1 Sculk Catalyst";
+            case "fly_voucher":
+                return "§eExp Bottles + Feather + Emerald + Diamond";
+            case "recipe_book":
+                return "§eBook + Crafting Table";
+            case "power_bow": // ADDED
+                return "§eBlaze Rod + Bow + Redstone + Ender Pearl";
+            default:
+                return "§cRecipe not available";
         }
     }
 }

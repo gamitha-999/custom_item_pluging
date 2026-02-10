@@ -33,14 +33,14 @@ public class EntityWandPlugin extends JavaPlugin {
             RecipeManager.registerWardenSwordRecipe(this);
             RecipeManager.registerFlyVoucherRecipe(this);
             RecipeManager.registerRecipeBookRecipe(this);
-            RecipeManager.registerPowerBowRecipe(this);
+            RecipeManager.registerPowerBowRecipe(this); // ADD THIS LINE
 
             // Register event listeners
             getServer().getPluginManager().registerEvents(new GUIListener(), this);
             getServer().getPluginManager().registerEvents(new PlayerJoinListener(), this);
             getServer().getPluginManager().registerEvents(new EntityWandListener(), this);
 
-            // Register the recipe unlock listener (simplified version)
+            // Register the recipe unlock listener
             getServer().getPluginManager().registerEvents(new RecipeUnlockListener(this), this);
 
             // Register commands
@@ -58,8 +58,6 @@ public class EntityWandPlugin extends JavaPlugin {
             // Start movement manager
             EntityMovementManager.start(this);
 
-            // REMOVED: Custom crafting table listener registration
-
             getLogger().info("=======================================");
             getLogger().info("EntityWand Plugin Enabled!");
             getLogger().info("Recipe Unlock System: ACTIVE");
@@ -68,7 +66,7 @@ public class EntityWandPlugin extends JavaPlugin {
             getLogger().info("- Warden Sword: Pick up Echo Shard or Sculk Catalyst");
             getLogger().info("- Fly Voucher: Pick up Feather, Exp Bottle, Emerald, or Diamond");
             getLogger().info("- Recipe Book: Pick up Book or Crafting Table");
-            // REMOVED: Custom Crafting Table info
+            getLogger().info("- Power of Gamiya: Pick up Blaze Rod, Bow, Redstone, or Ender Pearl"); // ADDED
             getLogger().info("Loaded " + playerDataManager.getTotalPlayersWithBooks() + " players with recipe books");
             getLogger().info("=======================================");
 

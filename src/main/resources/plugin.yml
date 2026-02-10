@@ -1,4 +1,4 @@
-name: CustomItem
+name: CustomItems
 version: 1.0.0
 main: cwr.cutomIterm.Entity_Wand.EntityWandPlugin
 api-version: '1.21'

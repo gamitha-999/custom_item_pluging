@@ -27,11 +27,22 @@ public class EntityWandListener implements Listener {
             ItemStack item = player.getInventory().getItemInMainHand();
             Action action = event.getAction();
 
-            // Handle recipe book
+            // Handle recipe book - FIXED: Check both hands
             if (RecipeBook.isRecipeBook(item)) {
                 if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
                     event.setCancelled(true);
                     // Open the recipe GUI
+                    cwr.cutomIterm.GUI.CustomGUI gui = new cwr.cutomIterm.GUI.CustomGUI();
+                    gui.open(player);
+                    return;
+                }
+            }
+
+            // Also check off-hand for recipe book
+            ItemStack offHandItem = player.getInventory().getItemInOffHand();
+            if (RecipeBook.isRecipeBook(offHandItem)) {
+                if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
+                    event.setCancelled(true);
                     cwr.cutomIterm.GUI.CustomGUI gui = new cwr.cutomIterm.GUI.CustomGUI();
                     gui.open(player);
                     return;
@@ -75,7 +86,7 @@ public class EntityWandListener implements Listener {
         }
     }
 
-    // NEW: Handle Power Bow shooting
+    // Handle Power Bow shooting
     @EventHandler
     public void onEntityShootBow(EntityShootBowEvent event) {
         try {
@@ -85,7 +96,7 @@ public class EntityWandListener implements Listener {
         }
     }
 
-    // NEW: Handle Power Bow arrow hit
+    // Handle Power Bow arrow hit
     @EventHandler
     public void onProjectileHit(ProjectileHitEvent event) {
         try {
@@ -122,7 +133,7 @@ public class EntityWandListener implements Listener {
                     result.setAmount(1);
                     inventory.setResult(result);
                 }
-                // NEW: Ensure crafted power bows are single
+                // Ensure crafted power bows are single
                 if (PowerBow.isPowerBow(result)) {
                     result.setAmount(1);
                     inventory.setResult(result);
@@ -167,7 +178,7 @@ public class EntityWandListener implements Listener {
                 }
             }
 
-            // NEW: Prevent stacking power bows
+            // Prevent stacking power bows
             if (currentItem != null && PowerBow.isPowerBow(currentItem)) {
                 if (cursorItem != null && PowerBow.isPowerBow(cursorItem)) {
                     event.setCancelled(true);
@@ -213,14 +224,6 @@ public class EntityWandListener implements Listener {
 
             // Switching items releases entity
             EntityMovementManager.releaseEntity(playerId);
-
-            // Clear warden sword cooldown if switching away from warden sword
-            ItemStack previousItem = player.getInventory().getItem(event.getPreviousSlot());
-            if (previousItem != null && WardenSword.isWardenSword(previousItem)) {
-                // Optionally clear cooldown when switching away
-                // This is optional - remove if you want cooldowns to persist
-                // WardenSword.clearCooldown(player);
-            }
         } catch (Exception e) {
             // Silent fail
         }

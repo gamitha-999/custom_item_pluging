@@ -19,7 +19,7 @@ public class RecipeManager {
     public static final NamespacedKey SWORD_RECIPE_KEY = new NamespacedKey("customitems", "warden_sword_recipe");
     public static final NamespacedKey VOUCHER_RECIPE_KEY = new NamespacedKey("customitems", "fly_voucher_recipe");
     public static final NamespacedKey RECIPE_BOOK_RECIPE_KEY = new NamespacedKey("customitems", "recipe_book_recipe");
-    public static final NamespacedKey POWER_BOW_RECIPE_KEY = new NamespacedKey("customitems", "power_bow_recipe"); // ADDED
+    public static final NamespacedKey POWER_BOW_RECIPE_KEY = new NamespacedKey("customitems", "power_bow_recipe");
 
     public static void registerWandRecipe(EntityWandPlugin plugin) {
         ItemStack wand = WandItem.createWand();
@@ -104,7 +104,6 @@ public class RecipeManager {
         }
     }
 
-    // ADDED: Register Power Bow recipe
     public static void registerPowerBowRecipe(EntityWandPlugin plugin) {
         try {
             ItemStack powerBow = PowerBow.createPowerBow();
@@ -113,7 +112,10 @@ public class RecipeManager {
             // Recipe: b r / eBr / b r
             // b = Blaze Rod, B = Bow, r = Redstone, e = Ender Pearl
             ShapedRecipe recipe = new ShapedRecipe(POWER_BOW_RECIPE_KEY, powerBow);
+
+            // Use the exact pattern you specified
             recipe.shape("b r", "eBr", "b r");
+
             recipe.setIngredient('b', Material.BLAZE_ROD);
             recipe.setIngredient('B', Material.BOW);
             recipe.setIngredient('r', Material.REDSTONE);
@@ -124,9 +126,12 @@ public class RecipeManager {
             }
             Bukkit.addRecipe(recipe);
             plugin.getLogger().info("Power of Gamiya Bow recipe registered with key: " + POWER_BOW_RECIPE_KEY);
+            plugin.getLogger().info("Recipe pattern: 'b r', 'eBr', 'b r'");
+            plugin.getLogger().info("Ingredients: b=BlazeRod, B=Bow, r=Redstone, e=EnderPearl");
 
         } catch (Exception e) {
             plugin.getLogger().severe("Could not register Power Bow recipe: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

@@ -16,7 +16,6 @@ import java.util.UUID;
 public class RecipeBook {
 
     private static final NamespacedKey RECIPE_BOOK_KEY = new NamespacedKey(EntityWandPlugin.getInstance(), "recipe_book");
-    private static final NamespacedKey RECIPE_BOOK_RECIPE_KEY = new NamespacedKey(EntityWandPlugin.getInstance(), "recipe_book_recipe");
 
     public static ItemStack createRecipeBook() {
         ItemStack book = new ItemStack(Material.KNOWLEDGE_BOOK);
@@ -55,7 +54,7 @@ public class RecipeBook {
     }
 
     public static boolean isRecipeBook(ItemStack item) {
-        if (item == null || item.getType() != Material.KNOWLEDGE_BOOK || !item.hasItemMeta()) {
+        if (item == null || item.getType() != Material.KNOWLEDGE_BOOK) {
             return false;
         }
 
@@ -70,31 +69,23 @@ public class RecipeBook {
         }
     }
 
-    // ADDED: Method to register the recipe book crafting recipe
     public static void registerRecipeBookRecipe() {
         try {
             ItemStack recipeBook = createRecipeBook();
-            ShapedRecipe recipe = new ShapedRecipe(RECIPE_BOOK_RECIPE_KEY, recipeBook);
+            ShapedRecipe recipe = new ShapedRecipe(
+                    new NamespacedKey(EntityWandPlugin.getInstance(), "recipe_book_crafting"),
+                    recipeBook
+            );
 
-            // Simple recipe: Book surrounded by glowstone dust
-            recipe.shape("GGG", "GBG", "GGG");
-            recipe.setIngredient('G', Material.GLOWSTONE_DUST);
+            // Simple recipe: Book + Crafting Table
+            recipe.shape("   ", " BC", "   ");
             recipe.setIngredient('B', Material.BOOK);
+            recipe.setIngredient('C', Material.CRAFTING_TABLE);
 
             Bukkit.addRecipe(recipe);
             EntityWandPlugin.getInstance().getLogger().info("Recipe Book crafting recipe registered!");
         } catch (Exception e) {
             EntityWandPlugin.getInstance().getLogger().warning("Failed to register recipe book recipe: " + e.getMessage());
-        }
-    }
-
-    // ADDED: Method to unregister the recipe book crafting recipe
-    public static void unregisterRecipeBookRecipe() {
-        try {
-            Bukkit.removeRecipe(RECIPE_BOOK_RECIPE_KEY);
-            EntityWandPlugin.getInstance().getLogger().info("Recipe Book recipe unregistered!");
-        } catch (Exception e) {
-            EntityWandPlugin.getInstance().getLogger().warning("Failed to unregister recipe book recipe: " + e.getMessage());
         }
     }
 }
