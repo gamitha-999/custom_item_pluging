@@ -1,0 +1,46 @@
+# GUI Configuration File
+# Edit these settings to customize your Recipe Book GUI
+
+# Header settings
+header:
+  enabled: true
+  material: "GRAY_STAINED_GLASS_PANE"
+  name: " "
+
+# Footer settings
+footer:
+  enabled: true
+  left_arrow:
+    material: "ARROW"
+    name: "&a&l← Previous Page"
+    lore:
+      - "&7Click to go to the previous page"
+  right_arrow:
+    material: "ARROW"
+    name: "&a&lNext Page →"
+    lore:
+      - "&7Click to go to the next page"
+  info_book:
+    material: "BOOK"
+    name: "&6&lMod Information"
+    lore:
+      - "&7Created by &eGamiya"
+      - "&7Version: &e1.0.0"
+      - "&7Total Items: &e%total_items%"
+      - ""
+      - "&8Use arrows to navigate pages"
+  close_button:
+    material: "BARRIER"
+    name: "&c&lClose"
+    lore:
+      - "&7Click to close this menu"
+
+# Display settings
+display:
+  gui_title: "&6&lCustom Recipes"
+  items_per_page: 36  # 9x4 grid (excluding header and footer rows)
+  rows: 6  # Total rows in GUI (1 header + 4 content + 1 footer)
+
+# Customization
+customization:
+  border_color: "GRAY_STAINED_GLASS_PANE"

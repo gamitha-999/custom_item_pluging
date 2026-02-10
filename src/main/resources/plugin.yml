@@ -1,0 +1,50 @@
+name: customitem
+version: 1.0.0
+main: cwr.cutomIterm.Entity_Wand.EntityWandPlugin
+api-version: "1.13"
+description: Entity Wand with centralized PlayerData system
+author: YourName
+
+commands:
+  ewand:
+    description: Get an Entity Wand
+    usage: /ewand [player]
+    aliases: [entitywand]
+  customrecipes:
+    description: Open custom recipes GUI
+    usage: /customrecipes
+    aliases: [crecipes, customitems]
+  customitem:
+    description: Manage custom items and player data
+    usage: |
+      /customitem give wand [player] - Get Entity Wand
+      /customitem give recipe_book [player] - Get Recipe Book
+      /customitem release - Release held entity
+      /customitem stats - View plugin statistics (Admin)
+      /customitem reload - Reload player data (Admin)
+      /customitem forcebook <player> - Force give recipe book (Admin)
+      /customitem cleardata <player> - Clear player data (Admin)
+    aliases: [citem]
+
+permissions:
+  entitywand.give:
+    description: Allows getting a wand
+    default: true
+  entitywand.give.others:
+    description: Allows giving wands to others
+    default: op
+  customrecipes.use:
+    description: Allows using the custom recipes GUI
+    default: true
+  customitem.give:
+    description: Allows getting custom items
+    default: true
+  customitem.give.others:
+    description: Allows giving custom items to others
+    default: op
+  customitem.admin:
+    description: Admin commands for custom items and player data
+    default: op
+  recipe.book.receive:
+    description: Allows receiving recipe book on first join
+    default: true
