@@ -33,7 +33,7 @@ public class EntityWandPlugin extends JavaPlugin {
             RecipeManager.registerWardenSwordRecipe(this);
             RecipeManager.registerFlyVoucherRecipe(this);
             RecipeManager.registerRecipeBookRecipe(this);
-            // REMOVED: registerCustomCraftingTableRecipe
+            RecipeManager.registerPowerBowRecipe(this);
 
             // Register event listeners
             getServer().getPluginManager().registerEvents(new GUIListener(), this);

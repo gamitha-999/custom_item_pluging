@@ -1,10 +1,13 @@
 package cwr.cutomIterm.Entity_Wand;
 
+import cwr.cutomIterm.Entity_Wand.bwo.PowerBow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityShootBowEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -44,7 +47,7 @@ public class EntityWandListener implements Listener {
                 }
             }
 
-            // NEW: Handle Fly Voucher
+            // Handle Fly Voucher
             if (FlyVoucher.isFlyVoucher(item)) {
                 if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
                     event.setCancelled(true);
@@ -72,6 +75,26 @@ public class EntityWandListener implements Listener {
         }
     }
 
+    // NEW: Handle Power Bow shooting
+    @EventHandler
+    public void onEntityShootBow(EntityShootBowEvent event) {
+        try {
+            PowerBow.onBowShoot(event);
+        } catch (Exception e) {
+            // Silent fail
+        }
+    }
+
+    // NEW: Handle Power Bow arrow hit
+    @EventHandler
+    public void onProjectileHit(ProjectileHitEvent event) {
+        try {
+            PowerBow.onArrowHit(event);
+        } catch (Exception e) {
+            // Silent fail
+        }
+    }
+
     @EventHandler
     public void onPrepareCraft(PrepareItemCraftEvent event) {
         try {
@@ -94,8 +117,13 @@ public class EntityWandListener implements Listener {
                     result.setAmount(1);
                     inventory.setResult(result);
                 }
-                // NEW: Ensure crafted fly vouchers are single
+                // Ensure crafted fly vouchers are single
                 if (FlyVoucher.isFlyVoucher(result)) {
+                    result.setAmount(1);
+                    inventory.setResult(result);
+                }
+                // NEW: Ensure crafted power bows are single
+                if (PowerBow.isPowerBow(result)) {
                     result.setAmount(1);
                     inventory.setResult(result);
                 }
@@ -132,9 +160,16 @@ public class EntityWandListener implements Listener {
                 }
             }
 
-            // NEW: Prevent stacking fly vouchers
+            // Prevent stacking fly vouchers
             if (currentItem != null && FlyVoucher.isFlyVoucher(currentItem)) {
                 if (cursorItem != null && FlyVoucher.isFlyVoucher(cursorItem)) {
+                    event.setCancelled(true);
+                }
+            }
+
+            // NEW: Prevent stacking power bows
+            if (currentItem != null && PowerBow.isPowerBow(currentItem)) {
+                if (cursorItem != null && PowerBow.isPowerBow(cursorItem)) {
                     event.setCancelled(true);
                 }
             }
@@ -190,6 +225,4 @@ public class EntityWandListener implements Listener {
             // Silent fail
         }
     }
-
-    // Note: PlayerQuitEvent is now handled in PlayerJoinListener.java
 }

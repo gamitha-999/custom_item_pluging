@@ -20,7 +20,7 @@ public class RecipeGUI implements InventoryHolder {
 
     public RecipeGUI(String itemId) {
         this.itemId = itemId;
-        this.guiItem = GUIConfig.getItem(itemId);
+        this.guiItem = CustomGUI.getItem(itemId);
         this.inventory = Bukkit.createInventory(this, 54, "§6§lCrafting Recipe");
         populateRecipeGUI();
     }
@@ -40,12 +40,12 @@ public class RecipeGUI implements InventoryHolder {
         }
 
         // Display the result item
-        ItemStack resultItem = GUIConfig.createDisplayItem(guiItem);
+        ItemStack resultItem = CustomGUI.createDisplayItem(guiItem);
         inventory.setItem(25, resultItem);
 
         // Get recipe pattern
-        String[] shape = GUIConfig.getRecipeShape(itemId);
-        Map<Character, Material> pattern = GUIConfig.getRecipePattern(itemId);
+        String[] shape = CustomGUI.getRecipeShape(itemId);
+        Map<Character, Material> pattern = CustomGUI.getRecipePattern(itemId);
 
         // Display crafting grid
         int[] craftingSlots = {10, 11, 12, 19, 20, 21, 28, 29, 30};
@@ -88,7 +88,7 @@ public class RecipeGUI implements InventoryHolder {
         if (infoMeta != null) {
             infoMeta.setDisplayName("§e§lRecipe Info");
             infoMeta.setLore(Arrays.asList(
-                    "§7" + GUIConfig.getRecipeDescription(itemId),
+                    "§7" + CustomGUI.getRecipeDescription(itemId),
                     "",
                     "§7Pattern:",
                     "§f" + shape[0],

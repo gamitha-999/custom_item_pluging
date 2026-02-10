@@ -1,5 +1,6 @@
 package cwr.cutomIterm.Entity_Wand;
 
+import cwr.cutomIterm.Entity_Wand.bwo.PowerBow;
 import cwr.cutomIterm.PlayerData.PlayerDataManager;
 import cwr.cutomIterm.PlayerData.RecipeUnlockListener;
 import org.bukkit.Bukkit;
@@ -27,6 +28,7 @@ public class EntityWandCommand implements CommandExecutor, TabCompleter {
                     player.sendMessage("§e/customitem give warden_sword §7- Get Warden Sword");
                     player.sendMessage("§e/customitem give fly_voucher §7- Get Fly Voucher");
                     player.sendMessage("§e/customitem give recipe_book §7- Get Recipe Book");
+                    player.sendMessage("§e/customitem give power_bow §7- Get Power of Gamiya Bow"); // ADDED
                     player.sendMessage("§e/customitem release §7- Release held entity");
                     player.sendMessage("§e/customrecipes §7- Open Recipe GUI");
                     player.sendMessage("§e/customitem flight §7- Check flight time");
@@ -47,7 +49,7 @@ public class EntityWandCommand implements CommandExecutor, TabCompleter {
                 }
 
                 if (args.length < 2) {
-                    sender.sendMessage("§cUsage: /customitem give <entity_wand|warden_sword|fly_voucher|recipe_book> [player]"); // REMOVED custom_table
+                    sender.sendMessage("§cUsage: /customitem give <entity_wand|warden_sword|fly_voucher|recipe_book|power_bow> [player]"); // UPDATED
                     return true;
                 }
 
@@ -105,7 +107,15 @@ public class EntityWandCommand implements CommandExecutor, TabCompleter {
                         }
                         break;
 
-                    // REMOVED: custom_table case
+                    case "power_bow": // ADDED
+                    case "gamiya_bow":
+                    case "tracking_bow":
+                        givePowerBow(target);
+                        if (!target.equals(sender)) {
+                            sender.sendMessage("§aGiven Power of Gamiya Bow to " + target.getName());
+                        }
+                        break;
+
                     default:
                         sender.sendMessage("§cUnknown item: " + itemType);
                         break;
@@ -113,7 +123,7 @@ public class EntityWandCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
 
-            // ... rest of the command code remains unchanged ...
+            // ... rest of existing command code remains the same ...
         } catch (Exception e) {
             // Silent fail
         }
@@ -158,7 +168,16 @@ public class EntityWandCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    // REMOVED: giveCustomCraftingTable method
+    // ADDED: Method to give Power Bow
+    private void givePowerBow(Player player) {
+        try {
+            player.getInventory().addItem(PowerBow.createPowerBow());
+            player.sendMessage("§aYou received the §6Power of Gamiya§a!");
+            player.sendMessage("§7Shoot arrows to §etrack and summon lightning§7.");
+        } catch (Exception e) {
+            // Silent fail
+        }
+    }
 
     @Override
     public List<String> onTabComplete(@Nonnull CommandSender sender, @Nonnull Command command,
@@ -179,8 +198,8 @@ public class EntityWandCommand implements CommandExecutor, TabCompleter {
                     }
                 }
             } else if (args.length == 2 && args[0].equalsIgnoreCase("give")) {
-                // REMOVED "custom_table" from completions
-                List<String> items = Arrays.asList("entity_wand", "warden_sword", "fly_voucher", "recipe_book");
+                // UPDATED: Added power_bow
+                List<String> items = Arrays.asList("entity_wand", "warden_sword", "fly_voucher", "recipe_book", "power_bow");
                 for (String item : items) {
                     if (item.toLowerCase().startsWith(args[1].toLowerCase())) {
                         completions.add(item);

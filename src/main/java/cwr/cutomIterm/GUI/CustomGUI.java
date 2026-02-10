@@ -1,181 +1,180 @@
 package cwr.cutomIterm.GUI;
 
-import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-public class CustomGUI implements InventoryHolder {
+public class CustomGUI {
 
-    private Inventory inventory;
-    private final Map<Integer, String> slotToItemId = new HashMap<>();
-    private final Map<Integer, Integer> slotToPage = new HashMap<>();
-    private int currentPage = 0;
-    private int totalPages = 0;
-    private final List<GUIItem> allItems;
-    private final GUIConfigManager configManager;
+    private static final Map<String, GUIItem> customItems = new HashMap<>();
 
-    public CustomGUI() {
-        this.configManager = GUIConfigManager.getInstance(org.bukkit.plugin.java.JavaPlugin.getProvidingPlugin(getClass()));
-        this.allItems = new ArrayList<>(GUIConfig.getCustomItems().values());
-        calculateTotalPages();
-        createInventory();
-        populateCurrentPage();
+    static {
+        registerItem("entity_wand", Material.STICK, "§bEntity Wand",
+                Arrays.asList("§7Hold right-click to move entities",
+                        "§7Durability: §e1000",
+                        "",
+                        "§aClick to view recipe"));
+
+        registerItem("warden_sword", Material.NETHERITE_SWORD, "§5Warden Sword",
+                Arrays.asList("§7Attack Damage: §c11",
+                        "§7Attack Speed: §e2.5",
+                        "",
+                        "§dAbility: Warden Sonic Boom",
+                        "§8Right-click to activate (20s cooldown)",
+                        "",
+                        "§aClick to view recipe"));
+
+        registerItem("fly_voucher", Material.FEATHER, "§b§lFly Voucher",
+                Arrays.asList("§7Right-click to gain flight",
+                        "§7Duration: §e30 minutes",
+                        "§7One-time use item",
+                        "",
+                        "§aClick to view recipe"));
+
+        registerItem("recipe_book", Material.KNOWLEDGE_BOOK, "§6§lRecipe Book",
+                Arrays.asList("§7Right-click to open",
+                        "§7Custom Item Recipes",
+                        "",
+                        "§eContains all custom crafting",
+                        "§erecipes for your items",
+                        "",
+                        "§aClick to view recipe"));
+
+        // ADDED: Power of Gamiya Bow
+        registerItem("power_bow", Material.BOW, "§6§lPower of Gamiya",
+                Arrays.asList("§6§lDivine Tracking Bow",
+                        "",
+                        "§7Special Ability: §eAuto-Tracking Arrows",
+                        "§8Arrows automatically track nearest entity",
+                        "§8and summon lightning on hit",
+                        "",
+                        "§aClick to view recipe"));
     }
 
-    private void calculateTotalPages() {
-        int itemsPerPage = configManager.getItemsPerPage();
-        totalPages = (int) Math.ceil((double) allItems.size() / itemsPerPage);
-        if (totalPages == 0) totalPages = 1;
+    private static void registerItem(String id, Material material, String name, java.util.List<String> lore) {
+        customItems.put(id, new GUIItem(id, material, name, lore));
     }
 
-    private void createInventory() {
-        int size = configManager.getInventorySize();
-        String title = configManager.getGuiTitle() + " §7(Page " + (currentPage + 1) + "/" + totalPages + ")";
-        this.inventory = Bukkit.createInventory(this, size, title);
+    public static Map<String, GUIItem> getCustomItems() {
+        return new HashMap<>(customItems);
     }
 
-    private void populateCurrentPage() {
-        inventory.clear();
-        slotToItemId.clear();
-        slotToPage.clear();
+    public static GUIItem getItem(String id) {
+        return customItems.get(id);
+    }
 
-        // Fill header if enabled (row 0, slots 0-8)
-        if (configManager.isHeaderEnabled()) {
-            for (int i = 0; i < 9; i++) {
-                inventory.setItem(i, configManager.getHeaderItem());
+    public static ItemStack createDisplayItem(GUIItem guiItem) {
+        ItemStack item = new ItemStack(guiItem.getMaterial());
+        ItemMeta meta = item.getItemMeta();
+
+        if (meta != null) {
+            meta.setDisplayName(guiItem.getName());
+            meta.setLore(guiItem.getLore());
+
+            // Add enchantment glint to special items
+            if (guiItem.getId().equals("fly_voucher") ||
+                    guiItem.getId().equals("recipe_book") ||
+                    guiItem.getId().equals("warden_sword") ||
+                    guiItem.getId().equals("power_bow")) {
+                meta.setEnchantmentGlintOverride(true);
             }
+
+            item.setItemMeta(meta);
         }
 
-        // Calculate start and end indices for current page
-        int itemsPerPage = configManager.getItemsPerPage();
-        int startIndex = currentPage * itemsPerPage;
-        int endIndex = Math.min(startIndex + itemsPerPage, allItems.size());
+        return item;
+    }
 
-        // Fill content slots (rows 1-4, slots 9-44)
-        int slot = 9; // Start at row 1, column 0
+    public static Map<Character, Material> getRecipePattern(String itemId) {
+        Map<Character, Material> pattern = new HashMap<>();
 
-        for (int i = startIndex; i < endIndex; i++) {
-            GUIItem guiItem = allItems.get(i);
-            ItemStack displayItem = GUIConfig.createDisplayItem(guiItem);
+        switch (itemId) {
+            case "entity_wand":
+                pattern.put('G', Material.GOLD_INGOT);
+                pattern.put('S', Material.STICK);
+                break;
 
-            inventory.setItem(slot, displayItem);
-            slotToItemId.put(slot, guiItem.getId());
-            slotToPage.put(slot, currentPage);
-            slot++;
+            case "warden_sword":
+                pattern.put('E', Material.ECHO_SHARD);
+                pattern.put('S', Material.SCULK_CATALYST);
+                break;
 
-            // Move to next row if we reach the end of current row
-            if (slot % 9 == 0) {
-                // Check if we've filled all content rows
-                if (slot >= 45) { // 5th row starts at slot 45
-                    break;
-                }
-            }
+            case "fly_voucher":
+                pattern.put('B', Material.EXPERIENCE_BOTTLE);
+                pattern.put('F', Material.FEATHER);
+                pattern.put('E', Material.EMERALD);
+                pattern.put('D', Material.DIAMOND);
+                break;
+
+            case "recipe_book":
+                pattern.put('B', Material.BOOK);
+                pattern.put('C', Material.CRAFTING_TABLE);
+                break;
+
+            // ADDED: Power Bow recipe pattern
+            case "power_bow":
+                pattern.put('b', Material.BLAZE_ROD);
+                pattern.put('B', Material.BOW);
+                pattern.put('r', Material.REDSTONE);
+                pattern.put('e', Material.ENDER_PEARL);
+                break;
+
+            default:
+                pattern.put('?', Material.BARRIER);
         }
 
-        // Fill footer if enabled (row 5, slots 45-53)
-        if (configManager.isFooterEnabled()) {
-            int footerRowStart = 45; // Last row (6th row, 0-indexed)
+        return pattern;
+    }
 
-            // Left arrow (slot 45)
-            if (currentPage > 0) {
-                inventory.setItem(footerRowStart, configManager.getLeftArrow());
-            } else {
-                inventory.setItem(footerRowStart, configManager.getEmptyPane());
-            }
+    public static String[] getRecipeShape(String itemId) {
+        switch (itemId) {
+            case "entity_wand":
+                return new String[]{"GGG", "GSG", "GGG"};
 
-            // Fill middle slots with empty panes (slots 46-51)
-            for (int i = 1; i <= 6; i++) {
-                inventory.setItem(footerRowStart + i, configManager.getEmptyPane());
-            }
+            case "warden_sword":
+                return new String[]{" E ", " E ", " S "};
 
-            // Info book (slot 51)
-            inventory.setItem(footerRowStart + 6, configManager.getInfoBook(allItems.size()));
+            case "fly_voucher":
+                return new String[]{"BBB", "BFB", "EDE"};
 
-            // Close button (slot 52)
-            inventory.setItem(footerRowStart + 7, configManager.getCloseButton());
+            case "recipe_book":
+                return new String[]{"   ", " BC", "   "};
 
-            // Right arrow (slot 53)
-            if (currentPage < totalPages - 1) {
-                inventory.setItem(footerRowStart + 8, configManager.getRightArrow());
-            } else {
-                inventory.setItem(footerRowStart + 8, configManager.getEmptyPane());
-            }
+            // ADDED: Power Bow recipe shape (as specified: "b r", "eBr", "b r")
+            case "power_bow":
+                return new String[]{"b r", "eBr", "b r"};
+
+            default:
+                return new String[]{"???", "???", "???"};
         }
+    }
 
-        // Fill empty slots with panes
-        for (int i = 0; i < inventory.getSize(); i++) {
-            if (inventory.getItem(i) == null) {
-                inventory.setItem(i, configManager.getEmptyPane());
-            }
+    public static String getRecipeDescription(String itemId) {
+        switch (itemId) {
+            case "entity_wand":
+                return "§e8 Gold Ingots around 1 Stick";
+            case "warden_sword":
+                return "§e2 Echo Shards + 1 Sculk Catalyst";
+            case "fly_voucher":
+                return "§eExp Bottles + Feather + Emerald + Diamond";
+            case "recipe_book":
+                return "§eBook + Crafting Table";
+            case "power_bow": // ADDED
+                return "§eBlaze Rod + Bow + Redstone + Ender Pearl";
+            default:
+                return "§cRecipe not available";
         }
     }
 
     public void open(Player player) {
-        player.openInventory(inventory);
     }
 
     public void handleClick(InventoryClickEvent event) {
-        event.setCancelled(true);
-
-        if (!(event.getWhoClicked() instanceof Player player)) return;
-
-        int slot = event.getRawSlot();
-        if (slot < 0 || slot >= inventory.getSize()) return;
-
-        // Handle footer buttons (last row: slots 45-53)
-        int footerRowStart = 45;
-
-        // Left arrow (slot 45)
-        if (slot == footerRowStart && currentPage > 0) {
-            currentPage--;
-            refreshGUI(player);
-            return;
-        }
-
-        // Right arrow (slot 53)
-        if (slot == footerRowStart + 8 && currentPage < totalPages - 1) {
-            currentPage++;
-            refreshGUI(player);
-            return;
-        }
-
-        // Close button (slot 52)
-        if (slot == footerRowStart + 7) {
-            player.closeInventory();
-            return;
-        }
-
-        // Info book (slot 51) - do nothing
-        if (slot == footerRowStart + 6) {
-            return;
-        }
-
-        // Handle item click (content area: slots 9-44)
-        if (slot >= 9 && slot <= 44) {
-            String itemId = slotToItemId.get(slot);
-            if (itemId != null && slotToPage.get(slot) == currentPage) {
-                RecipeGUI recipeGUI = new RecipeGUI(itemId);
-                recipeGUI.open(player);
-            }
-        }
-    }
-
-    private void refreshGUI(Player player) {
-        createInventory();
-        populateCurrentPage();
-        player.updateInventory();
-    }
-
-    @Override
-    public Inventory getInventory() {
-        return inventory;
     }
 }

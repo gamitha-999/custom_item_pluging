@@ -5,6 +5,7 @@ import cwr.cutomIterm.Entity_Wand.FlyVoucher;
 import cwr.cutomIterm.Entity_Wand.RecipeBook;
 import cwr.cutomIterm.Entity_Wand.WandItem;
 import cwr.cutomIterm.Entity_Wand.WardenSword;
+import cwr.cutomIterm.Entity_Wand.bwo.PowerBow;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -18,7 +19,7 @@ public class RecipeManager {
     public static final NamespacedKey SWORD_RECIPE_KEY = new NamespacedKey("customitems", "warden_sword_recipe");
     public static final NamespacedKey VOUCHER_RECIPE_KEY = new NamespacedKey("customitems", "fly_voucher_recipe");
     public static final NamespacedKey RECIPE_BOOK_RECIPE_KEY = new NamespacedKey("customitems", "recipe_book_recipe");
-    // REMOVED: CUSTOM_TABLE_RECIPE_KEY
+    public static final NamespacedKey POWER_BOW_RECIPE_KEY = new NamespacedKey("customitems", "power_bow_recipe"); // ADDED
 
     public static void registerWandRecipe(EntityWandPlugin plugin) {
         ItemStack wand = WandItem.createWand();
@@ -103,5 +104,29 @@ public class RecipeManager {
         }
     }
 
-    // REMOVED: registerCustomCraftingTableRecipe method
+    // ADDED: Register Power Bow recipe
+    public static void registerPowerBowRecipe(EntityWandPlugin plugin) {
+        try {
+            ItemStack powerBow = PowerBow.createPowerBow();
+            powerBow.setAmount(1);
+
+            // Recipe: b r / eBr / b r
+            // b = Blaze Rod, B = Bow, r = Redstone, e = Ender Pearl
+            ShapedRecipe recipe = new ShapedRecipe(POWER_BOW_RECIPE_KEY, powerBow);
+            recipe.shape("b r", "eBr", "b r");
+            recipe.setIngredient('b', Material.BLAZE_ROD);
+            recipe.setIngredient('B', Material.BOW);
+            recipe.setIngredient('r', Material.REDSTONE);
+            recipe.setIngredient('e', Material.ENDER_PEARL);
+
+            if (Bukkit.getRecipe(POWER_BOW_RECIPE_KEY) != null) {
+                Bukkit.removeRecipe(POWER_BOW_RECIPE_KEY);
+            }
+            Bukkit.addRecipe(recipe);
+            plugin.getLogger().info("Power of Gamiya Bow recipe registered with key: " + POWER_BOW_RECIPE_KEY);
+
+        } catch (Exception e) {
+            plugin.getLogger().severe("Could not register Power Bow recipe: " + e.getMessage());
+        }
+    }
 }
