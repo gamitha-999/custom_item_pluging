@@ -325,4 +325,7 @@ public class FlyVoucher {
         }
         activeFlyTimers.clear();
     }
+    public static int getActiveFlightCount() {
+        return activeFlyTimers.size();
+    }
 }

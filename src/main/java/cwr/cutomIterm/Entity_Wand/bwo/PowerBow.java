@@ -21,7 +21,12 @@ public class PowerBow {
     private static final NamespacedKey TRACKING_ARROW_KEY = new NamespacedKey(EntityWandPlugin.getInstance(), "tracking_arrow");
 
     private static final Map<UUID, Entity> trackingArrows = new HashMap<>();
+    private static final Map<UUID, List<Location>> arrowTrails = new HashMap<>(); // Store trail locations
     private static final double TRACKING_RADIUS = 3.0; // 3-block radius for tracking
+
+    // Trail settings
+    private static final int TRAIL_LENGTH = 10; // How many previous positions to remember
+    private static final double TRAIL_SPACING = 0.5; // Distance between trail particles
 
     public static ItemStack createPowerBow() {
         try {
@@ -48,7 +53,8 @@ public class PowerBow {
                     "§7Special Ability: §eAuto-Tracking Arrows",
                     "§8Arrows automatically track nearest entity",
                     "§8within §e3 blocks §8radius",
-                    "§8and summon lightning on hit",
+                    "§8Leaves a §cflame trail §8as it flies",
+                    "§8and summons lightning on hit",
                     "",
                     "§a► Shoot to activate tracking",
                     "§a► Lightning strikes on hit"
@@ -90,6 +96,10 @@ public class PowerBow {
             Arrow arrow = (Arrow) event.getProjectile();
             arrow.getPersistentDataContainer().set(TRACKING_ARROW_KEY, PersistentDataType.BYTE, (byte) 1);
             trackingArrows.put(arrow.getUniqueId(), arrow);
+
+            // Initialize trail for this arrow
+            arrowTrails.put(arrow.getUniqueId(), new ArrayList<>());
+
             startTrackingTask(arrow, player);
 
             // Play sounds
@@ -106,24 +116,27 @@ public class PowerBow {
             @Override
             public void run() {
                 if (arrow == null || arrow.isDead() || !arrow.isValid()) {
-                    trackingArrows.remove(arrow.getUniqueId());
+                    cleanupArrow(arrow);
                     this.cancel();
                     return;
                 }
 
                 // Stop tracking if arrow is stuck in a block
                 if (arrow.isOnGround() || arrow.isInBlock()) {
-                    trackingArrows.remove(arrow.getUniqueId());
+                    cleanupArrow(arrow);
                     this.cancel();
                     return;
                 }
 
                 if (ticks >= MAX_TICKS) {
-                    trackingArrows.remove(arrow.getUniqueId());
+                    cleanupArrow(arrow);
                     arrow.remove();
                     this.cancel();
                     return;
                 }
+
+                // Update arrow trail
+                updateArrowTrail(arrow);
 
                 // Find nearest entity within 3 blocks
                 Entity nearestEntity = findNearestEntityInRadius(arrow, shooter);
@@ -165,6 +178,97 @@ public class PowerBow {
                 ticks++;
             }
         }.runTaskTimer(EntityWandPlugin.getInstance(), 1L, 1L);
+    }
+
+    private static void updateArrowTrail(Arrow arrow) {
+        UUID arrowId = arrow.getUniqueId();
+        List<Location> trail = arrowTrails.get(arrowId);
+
+        if (trail == null) {
+            trail = new ArrayList<>();
+            arrowTrails.put(arrowId, trail);
+        }
+
+        // Add current position to trail
+        Location currentPos = arrow.getLocation().clone();
+        trail.add(currentPos);
+
+        // Keep only the last TRAIL_LENGTH positions
+        while (trail.size() > TRAIL_LENGTH) {
+            trail.remove(0);
+        }
+
+        // Spawn flame particles along the trail
+        spawnFlameTrail(trail, arrow.getWorld());
+    }
+
+    private static void spawnFlameTrail(List<Location> trail, World world) {
+        if (trail.size() < 2) return;
+
+        // Spawn flame particles at each trail point
+        for (int i = 0; i < trail.size(); i++) {
+            Location point = trail.get(i);
+
+            // Spawn multiple flame particles at each point
+            int particleCount = 2;
+            if (i == trail.size() - 1) {
+                // More particles at the newest point (arrow head)
+                particleCount = 4;
+            }
+
+            for (int j = 0; j < particleCount; j++) {
+                double offsetX = (Math.random() - 0.5) * 0.2;
+                double offsetY = (Math.random() - 0.5) * 0.2;
+                double offsetZ = (Math.random() - 0.5) * 0.2;
+
+                Location particleLoc = point.clone().add(offsetX, offsetY, offsetZ);
+
+                // Use FLAME particle
+                world.spawnParticle(Particle.FLAME, particleLoc, 1, 0, 0, 0, 0);
+
+                // Also add some smoke for variety
+                if (Math.random() < 0.3) {
+                    try {
+                        // Try to use SMOKE particle (newer versions)
+                        world.spawnParticle(Particle.valueOf("SMOKE"), particleLoc, 1, 0.05, 0.05, 0.05, 0);
+                    } catch (IllegalArgumentException e) {
+                        try {
+                            // Try to use SMOKE_NORMAL particle (older versions)
+                            world.spawnParticle(Particle.valueOf("SMOKE_NORMAL"), particleLoc, 1, 0.05, 0.05, 0.05, 0);
+                        } catch (IllegalArgumentException e2) {
+                            // If neither exists, just skip or use a different particle
+                            world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, particleLoc, 1, 0.05, 0.05, 0.05, 0);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Connect the dots with a continuous flame trail
+        for (int i = 0; i < trail.size() - 1; i++) {
+            Location start = trail.get(i);
+            Location end = trail.get(i + 1);
+
+            // Create a smooth trail between points
+            Vector direction = end.toVector().subtract(start.toVector());
+            double distance = direction.length();
+            direction.normalize();
+
+            // Spawn particles along the line between points
+            int particlesAlongLine = (int) (distance / TRAIL_SPACING);
+            for (int j = 0; j < particlesAlongLine; j++) {
+                double ratio = (double) j / particlesAlongLine;
+                Location particleLoc = start.clone().add(direction.clone().multiply(distance * ratio));
+
+                // Spawn flame particles
+                world.spawnParticle(Particle.FLAME, particleLoc, 1, 0.02, 0.02, 0.02, 0);
+
+                // Occasionally spawn larger fire particles
+                if (Math.random() < 0.2) {
+                    world.spawnParticle(Particle.LAVA, particleLoc, 1, 0, 0, 0, 0);
+                }
+            }
+        }
     }
 
     private static Entity findNearestEntityInRadius(Arrow arrow, Player shooter) {
@@ -244,6 +348,9 @@ public class PowerBow {
                 hitBlock != null ? hitBlock.getLocation().add(0.5, 1, 0.5) :
                         arrow.getLocation();
 
+        // Create a final flame burst effect
+        createFlameBurst(hitLocation, arrow.getWorld());
+
         // Lightning effect
         arrow.getWorld().strikeLightningEffect(hitLocation);
 
@@ -263,10 +370,46 @@ public class PowerBow {
 
         // Explosion particles
         arrow.getWorld().spawnParticle(Particle.EXPLOSION, hitLocation, 5, 0.5, 0.5, 0.5, 0);
-        arrow.getWorld().spawnParticle(Particle.FLAME, hitLocation, 10, 0.5, 0.5, 0.5, 0.1);
+        arrow.getWorld().spawnParticle(Particle.FLAME, hitLocation, 20, 1.0, 1.0, 1.0, 0.1);
 
-        trackingArrows.remove(arrowId);
+        cleanupArrow(arrow);
         arrow.remove();
+    }
+
+    private static void createFlameBurst(Location location, World world) {
+        // Create a burst of flame particles on impact
+        int burstParticles = 30;
+        for (int i = 0; i < burstParticles; i++) {
+            double angle = Math.random() * Math.PI * 2;
+            double radius = Math.random() * 1.5;
+            double x = Math.cos(angle) * radius;
+            double z = Math.sin(angle) * radius;
+            double y = Math.random() * 1.5;
+
+            Location particleLoc = location.clone().add(x, y, z);
+            Vector velocity = new Vector(x * 0.2, y * 0.1, z * 0.2);
+
+            // Spawn flame particles with some velocity
+            world.spawnParticle(Particle.FLAME, particleLoc, 1, 0, 0, 0, 0, null, true);
+        }
+
+        // Add some lava particles for extra effect
+        for (int i = 0; i < 5; i++) {
+            double offsetX = (Math.random() - 0.5) * 0.5;
+            double offsetY = Math.random() * 0.5;
+            double offsetZ = (Math.random() - 0.5) * 0.5;
+
+            Location particleLoc = location.clone().add(offsetX, offsetY, offsetZ);
+            world.spawnParticle(Particle.LAVA, particleLoc, 1, 0, 0, 0, 0);
+        }
+    }
+
+    private static void cleanupArrow(Arrow arrow) {
+        if (arrow == null) return;
+
+        UUID arrowId = arrow.getUniqueId();
+        trackingArrows.remove(arrowId);
+        arrowTrails.remove(arrowId);
     }
 
     public static void clearTrackingArrows() {
@@ -276,5 +419,9 @@ public class PowerBow {
             }
         }
         trackingArrows.clear();
+        arrowTrails.clear();
+    }
+    public static int getActiveArrowCount() {
+        return trackingArrows.size();
     }
 }

@@ -284,4 +284,7 @@ public class WardenSword {
         if (remaining <= 0) return 0.0;
         return (double) remaining / MAX_DURABILITY * 100.0;
     }
+    public static int getCooldownCount() {
+        return playerCooldowns.size();
+    }
 }

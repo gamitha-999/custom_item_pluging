@@ -14,12 +14,20 @@ import org.bukkit.inventory.ShapedRecipe;
 
 public class RecipeManager {
 
-    // Public constants for recipe keys
-    public static final NamespacedKey WAND_RECIPE_KEY = new NamespacedKey("customitems", "entity_wand_recipe");
-    public static final NamespacedKey SWORD_RECIPE_KEY = new NamespacedKey("customitems", "warden_sword_recipe");
-    public static final NamespacedKey VOUCHER_RECIPE_KEY = new NamespacedKey("customitems", "fly_voucher_recipe");
-    public static final NamespacedKey RECIPE_BOOK_RECIPE_KEY = new NamespacedKey("customitems", "recipe_book_recipe");
-    public static final NamespacedKey POWER_BOW_RECIPE_KEY = new NamespacedKey("customitems", "power_bow_recipe");
+    // Recipe keys - will be initialized in initializeKeys()
+    public static NamespacedKey WAND_RECIPE_KEY;
+    public static NamespacedKey SWORD_RECIPE_KEY;
+    public static NamespacedKey VOUCHER_RECIPE_KEY;
+    public static NamespacedKey RECIPE_BOOK_RECIPE_KEY;
+    public static NamespacedKey POWER_BOW_RECIPE_KEY;
+
+    public static void initializeKeys(EntityWandPlugin plugin) {
+        WAND_RECIPE_KEY = new NamespacedKey(plugin, "entity_wand_recipe");
+        SWORD_RECIPE_KEY = new NamespacedKey(plugin, "warden_sword_recipe");
+        VOUCHER_RECIPE_KEY = new NamespacedKey(plugin, "fly_voucher_recipe");
+        RECIPE_BOOK_RECIPE_KEY = new NamespacedKey(plugin, "recipe_book_recipe");
+        POWER_BOW_RECIPE_KEY = new NamespacedKey(plugin, "power_bow_recipe");
+    }
 
     public static void registerWandRecipe(EntityWandPlugin plugin) {
         ItemStack wand = WandItem.createWand();

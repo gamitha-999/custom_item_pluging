@@ -49,7 +49,13 @@ public class RecipeUnlockListener implements Listener {
             unlockRecipeBookRecipe(player);
         }
 
-        // REMOVED: Custom Crafting Table recipe unlock check
+        // Check for Power Bow recipe unlocks
+        if (pickedUpMaterial == Material.BLAZE_ROD ||
+                pickedUpMaterial == Material.BOW ||
+                pickedUpMaterial == Material.REDSTONE ||
+                pickedUpMaterial == Material.ENDER_PEARL) {
+            unlockPowerBowRecipe(player);
+        }
     }
 
     @EventHandler
@@ -69,8 +75,10 @@ public class RecipeUnlockListener implements Listener {
                 player.getInventory().contains(Material.DIAMOND);
         boolean hasRecipeBookIngredient = player.getInventory().contains(Material.BOOK) ||
                 player.getInventory().contains(Material.CRAFTING_TABLE);
-
-        // REMOVED: hasCustomTableIngredient check
+        boolean hasPowerBowIngredient = player.getInventory().contains(Material.BLAZE_ROD) ||
+                player.getInventory().contains(Material.BOW) ||
+                player.getInventory().contains(Material.REDSTONE) ||
+                player.getInventory().contains(Material.ENDER_PEARL);
 
         if (hasGoldOrStick) {
             unlockEntityWandRecipe(player);
@@ -84,7 +92,9 @@ public class RecipeUnlockListener implements Listener {
         if (hasRecipeBookIngredient) {
             unlockRecipeBookRecipe(player);
         }
-        // REMOVED: unlockCustomCraftingTableRecipe call
+        if (hasPowerBowIngredient) {
+            unlockPowerBowRecipe(player);
+        }
     }
 
     private void unlockEntityWandRecipe(Player player) {
@@ -156,7 +166,23 @@ public class RecipeUnlockListener implements Listener {
         }
     }
 
-    // REMOVED: unlockCustomCraftingTableRecipe method
+    private void unlockPowerBowRecipe(Player player) {
+        try {
+            if (player.hasDiscoveredRecipe(RecipeManager.POWER_BOW_RECIPE_KEY)) {
+                return;
+            }
+
+            if (plugin.getServer().getRecipe(RecipeManager.POWER_BOW_RECIPE_KEY) != null) {
+                player.discoverRecipe(RecipeManager.POWER_BOW_RECIPE_KEY);
+                plugin.getLogger().info("Unlocked Power of Gamiya Bow recipe for player: " + player.getName());
+
+                player.sendMessage("§aYou've discovered the §6Power of Gamiya§a recipe!");
+                player.sendMessage("§7Craft it with: §eBlaze Rod, Bow, Redstone, Ender Pearl");
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to unlock Power Bow recipe: " + e.getMessage());
+        }
+    }
 
     public static void unlockAllCustomRecipes(Player player, EntityWandPlugin plugin) {
         try {
@@ -164,7 +190,7 @@ public class RecipeUnlockListener implements Listener {
             player.discoverRecipe(RecipeManager.SWORD_RECIPE_KEY);
             player.discoverRecipe(RecipeManager.VOUCHER_RECIPE_KEY);
             player.discoverRecipe(RecipeManager.RECIPE_BOOK_RECIPE_KEY);
-            // REMOVED: CUSTOM_TABLE_RECIPE_KEY
+            player.discoverRecipe(RecipeManager.POWER_BOW_RECIPE_KEY);
 
             plugin.getLogger().info("Manually unlocked all custom recipes for player: " + player.getName());
             player.sendMessage("§aAll custom recipes have been unlocked!");
