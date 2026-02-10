@@ -44,14 +44,7 @@ public class GUIConfig {
                         "",
                         "§aClick to view recipe"));
 
-        // Register Custom Crafting Table
-        registerItem("custom_crafting_table", Material.CRAFTING_TABLE, "§6§lAdvanced Crafting Table",
-                Arrays.asList("§7Place to create 6x6 crafting table",
-                        "§7Supports advanced recipes",
-                        "",
-                        "§eEmits magical particles",
-                        "§8§oEnchanted crafting magic",
-                        "§aClick to view recipe"));
+        // REMOVED: custom_crafting_table registration
     }
 
     private static void registerItem(String id, Material material, String name, java.util.List<String> lore) {
@@ -74,10 +67,10 @@ public class GUIConfig {
             meta.setDisplayName(guiItem.getName());
             meta.setLore(guiItem.getLore());
 
+            // Add enchantment glint to special items
             if (guiItem.getId().equals("fly_voucher") ||
                     guiItem.getId().equals("recipe_book") ||
-                    guiItem.getId().equals("warden_sword") ||
-                    guiItem.getId().equals("custom_crafting_table")) {
+                    guiItem.getId().equals("warden_sword")) {
                 meta.setEnchantmentGlintOverride(true);
             }
 
@@ -113,13 +106,7 @@ public class GUIConfig {
                 pattern.put('C', Material.CRAFTING_TABLE);
                 break;
 
-            case "custom_crafting_table":
-                // Recipe: ODO/DCD/ODO
-                pattern.put('O', Material.OBSIDIAN);
-                pattern.put('D', Material.DIAMOND);
-                pattern.put('C', Material.CRAFTING_TABLE);
-                break;
-
+            // REMOVED: custom_crafting_table case
             default:
                 pattern.put('?', Material.BARRIER);
         }
@@ -141,9 +128,7 @@ public class GUIConfig {
             case "recipe_book":
                 return new String[]{"   ", " BC", "   "};
 
-            case "custom_crafting_table":
-                return new String[]{"ODO", "DCD", "ODO"};
-
+            // REMOVED: custom_crafting_table case
             default:
                 return new String[]{"???", "???", "???"};
         }
@@ -159,8 +144,7 @@ public class GUIConfig {
                 return "§eExp Bottles + Feather + Emerald + Diamond";
             case "recipe_book":
                 return "§eBook + Crafting Table";
-            case "custom_crafting_table":
-                return "§eObsidian + Diamond + Crafting Table";
+            // REMOVED: custom_crafting_table case
             default:
                 return "§cRecipe not available";
         }

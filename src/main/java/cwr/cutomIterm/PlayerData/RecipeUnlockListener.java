@@ -48,6 +48,8 @@ public class RecipeUnlockListener implements Listener {
         if (pickedUpMaterial == Material.BOOK || pickedUpMaterial == Material.CRAFTING_TABLE) {
             unlockRecipeBookRecipe(player);
         }
+
+        // REMOVED: Custom Crafting Table recipe unlock check
     }
 
     @EventHandler
@@ -68,6 +70,8 @@ public class RecipeUnlockListener implements Listener {
         boolean hasRecipeBookIngredient = player.getInventory().contains(Material.BOOK) ||
                 player.getInventory().contains(Material.CRAFTING_TABLE);
 
+        // REMOVED: hasCustomTableIngredient check
+
         if (hasGoldOrStick) {
             unlockEntityWandRecipe(player);
         }
@@ -80,6 +84,7 @@ public class RecipeUnlockListener implements Listener {
         if (hasRecipeBookIngredient) {
             unlockRecipeBookRecipe(player);
         }
+        // REMOVED: unlockCustomCraftingTableRecipe call
     }
 
     private void unlockEntityWandRecipe(Player player) {
@@ -151,12 +156,15 @@ public class RecipeUnlockListener implements Listener {
         }
     }
 
+    // REMOVED: unlockCustomCraftingTableRecipe method
+
     public static void unlockAllCustomRecipes(Player player, EntityWandPlugin plugin) {
         try {
             player.discoverRecipe(RecipeManager.WAND_RECIPE_KEY);
             player.discoverRecipe(RecipeManager.SWORD_RECIPE_KEY);
             player.discoverRecipe(RecipeManager.VOUCHER_RECIPE_KEY);
             player.discoverRecipe(RecipeManager.RECIPE_BOOK_RECIPE_KEY);
+            // REMOVED: CUSTOM_TABLE_RECIPE_KEY
 
             plugin.getLogger().info("Manually unlocked all custom recipes for player: " + player.getName());
             player.sendMessage("§aAll custom recipes have been unlocked!");

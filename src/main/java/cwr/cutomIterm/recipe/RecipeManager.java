@@ -5,13 +5,11 @@ import cwr.cutomIterm.Entity_Wand.FlyVoucher;
 import cwr.cutomIterm.Entity_Wand.RecipeBook;
 import cwr.cutomIterm.Entity_Wand.WandItem;
 import cwr.cutomIterm.Entity_Wand.WardenSword;
-import cwr.cutomIterm.Entity_Wand.CustomCraftingTable.CustomCraftingTable;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
-
 
 public class RecipeManager {
 
@@ -20,7 +18,7 @@ public class RecipeManager {
     public static final NamespacedKey SWORD_RECIPE_KEY = new NamespacedKey("customitems", "warden_sword_recipe");
     public static final NamespacedKey VOUCHER_RECIPE_KEY = new NamespacedKey("customitems", "fly_voucher_recipe");
     public static final NamespacedKey RECIPE_BOOK_RECIPE_KEY = new NamespacedKey("customitems", "recipe_book_recipe");
-    public static final NamespacedKey CUSTOM_TABLE_RECIPE_KEY = new NamespacedKey("customitems", "custom_crafting_table_recipe");
+    // REMOVED: CUSTOM_TABLE_RECIPE_KEY
 
     public static void registerWandRecipe(EntityWandPlugin plugin) {
         ItemStack wand = WandItem.createWand();
@@ -105,30 +103,5 @@ public class RecipeManager {
         }
     }
 
-    public static void registerCustomCraftingTableRecipe(EntityWandPlugin plugin) {
-        ItemStack customTable = CustomCraftingTable.createCustomCraftingTable();
-        customTable.setAmount(1);
-
-        ShapedRecipe recipe = new ShapedRecipe(CUSTOM_TABLE_RECIPE_KEY, customTable);
-
-        // Recipe as requested:
-        // Row 1: "ODO" (Obsidian, Diamond, Obsidian)
-        // Row 2: "DCD" (Diamond, Crafting Table, Diamond)
-        // Row 3: "ODO" (Obsidian, Diamond, Obsidian)
-        recipe.shape("ODO", "DCD", "ODO");
-
-        recipe.setIngredient('O', Material.OBSIDIAN);
-        recipe.setIngredient('D', Material.DIAMOND);
-        recipe.setIngredient('C', Material.CRAFTING_TABLE);
-
-        try {
-            if (Bukkit.getRecipe(CUSTOM_TABLE_RECIPE_KEY) != null) {
-                Bukkit.removeRecipe(CUSTOM_TABLE_RECIPE_KEY);
-            }
-            Bukkit.addRecipe(recipe);
-            plugin.getLogger().info("Custom Crafting Table recipe registered with key: " + CUSTOM_TABLE_RECIPE_KEY);
-        } catch (Exception e) {
-            plugin.getLogger().severe("Could not register Custom Crafting Table recipe: " + e.getMessage());
-        }
-    }
+    // REMOVED: registerCustomCraftingTableRecipe method
 }
