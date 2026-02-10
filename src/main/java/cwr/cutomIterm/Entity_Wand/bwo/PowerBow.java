@@ -21,6 +21,7 @@ public class PowerBow {
     private static final NamespacedKey TRACKING_ARROW_KEY = new NamespacedKey(EntityWandPlugin.getInstance(), "tracking_arrow");
 
     private static final Map<UUID, Entity> trackingArrows = new HashMap<>();
+    private static final double TRACKING_RADIUS = 3.0; // 3-block radius for tracking
 
     public static ItemStack createPowerBow() {
         try {
@@ -46,6 +47,7 @@ public class PowerBow {
                     "",
                     "§7Special Ability: §eAuto-Tracking Arrows",
                     "§8Arrows automatically track nearest entity",
+                    "§8within §e3 blocks §8radius",
                     "§8and summon lightning on hit",
                     "",
                     "§a► Shoot to activate tracking",
@@ -90,11 +92,9 @@ public class PowerBow {
             trackingArrows.put(arrow.getUniqueId(), arrow);
             startTrackingTask(arrow, player);
 
+            // Play sounds
             player.getWorld().playSound(player.getLocation(), Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1.0f, 1.5f);
             player.getWorld().playSound(player.getLocation(), Sound.ITEM_TRIDENT_RETURN, 0.8f, 1.2f);
-
-            player.sendMessage("§6§lPower of Gamiya Activated!");
-            player.sendMessage("§7Arrow will track nearest entity...");
         }
     }
 
@@ -105,7 +105,14 @@ public class PowerBow {
 
             @Override
             public void run() {
-                if (arrow == null || arrow.isDead() || arrow.isOnGround() || !arrow.isValid()) {
+                if (arrow == null || arrow.isDead() || !arrow.isValid()) {
+                    trackingArrows.remove(arrow.getUniqueId());
+                    this.cancel();
+                    return;
+                }
+
+                // Stop tracking if arrow is stuck in a block
+                if (arrow.isOnGround() || arrow.isInBlock()) {
                     trackingArrows.remove(arrow.getUniqueId());
                     this.cancel();
                     return;
@@ -118,19 +125,41 @@ public class PowerBow {
                     return;
                 }
 
-                Entity nearestEntity = findNearestEntity(arrow, shooter);
+                // Find nearest entity within 3 blocks
+                Entity nearestEntity = findNearestEntityInRadius(arrow, shooter);
 
                 if (nearestEntity != null) {
+                    // Stronger tracking - redirect arrow more aggressively
                     Location arrowLoc = arrow.getLocation();
                     Location entityLoc = nearestEntity.getLocation();
-                    entityLoc.setY(entityLoc.getY() + 0.5);
+
+                    // Aim for center of entity
+                    entityLoc.setY(entityLoc.getY() + (nearestEntity.getHeight() / 2));
 
                     Vector direction = entityLoc.toVector().subtract(arrowLoc.toVector()).normalize();
+
+                    // Strong tracking force (0.5 instead of 0.3 for more aggressive tracking)
                     Vector currentVelocity = arrow.getVelocity();
-                    Vector newVelocity = currentVelocity.clone().add(direction.multiply(0.3)).normalize().multiply(currentVelocity.length());
+                    double speed = currentVelocity.length();
+
+                    // If arrow is too slow, give it a minimum speed
+                    if (speed < 0.5) {
+                        speed = 1.0;
+                    }
+
+                    // Calculate new direction (70% towards target, 30% original direction)
+                    Vector newDirection = direction.multiply(0.7).add(currentVelocity.normalize().multiply(0.3)).normalize();
+                    Vector newVelocity = newDirection.multiply(speed);
+
                     arrow.setVelocity(newVelocity);
 
-                    arrow.getWorld().spawnParticle(Particle.CRIT, arrow.getLocation(), 3, 0.1, 0.1, 0.1, 0);
+                    // Visual tracking effect
+                    arrow.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, arrow.getLocation(), 2, 0.05, 0.05, 0.05, 0.01);
+
+                    // Show particle line to target
+                    if (ticks % 5 == 0) { // Every 5 ticks
+                        showTrackingLine(arrowLoc, entityLoc, arrow.getWorld());
+                    }
                 }
 
                 ticks++;
@@ -138,32 +167,69 @@ public class PowerBow {
         }.runTaskTimer(EntityWandPlugin.getInstance(), 1L, 1L);
     }
 
-    private static Entity findNearestEntity(Arrow arrow, Player shooter) {
+    private static Entity findNearestEntityInRadius(Arrow arrow, Player shooter) {
         Location arrowLoc = arrow.getLocation();
         Entity nearest = null;
         double nearestDistance = Double.MAX_VALUE;
 
-        for (Entity entity : arrow.getWorld().getNearbyEntities(arrowLoc, 15, 15, 15)) {
+        // Search in 3-block radius (as requested)
+        double searchRadius = TRACKING_RADIUS;
+
+        for (Entity entity : arrow.getWorld().getNearbyEntities(arrowLoc, searchRadius, searchRadius, searchRadius)) {
+            // Skip invalid targets
             if (entity == shooter || entity == arrow ||
                     entity instanceof Item || entity instanceof Arrow ||
-                    entity instanceof Projectile || entity instanceof ExperienceOrb) {
+                    entity instanceof Projectile || entity instanceof ExperienceOrb ||
+                    entity instanceof EnderCrystal || entity instanceof ItemFrame) {
                 continue;
             }
 
-            if (!(entity instanceof LivingEntity living) || living.isDead()) {
+            // Only target living entities
+            if (!(entity instanceof LivingEntity)) {
                 continue;
             }
 
+            LivingEntity living = (LivingEntity) entity;
+
+            // Don't target dead entities
+            if (living.isDead()) {
+                continue;
+            }
+
+            // Calculate distance
             double distance = arrowLoc.distance(entity.getLocation());
-            if (distance < nearestDistance && arrowLoc.getWorld().rayTraceBlocks(
-                    arrowLoc, entity.getLocation().toVector().subtract(arrowLoc.toVector()).normalize(),
-                    distance) == null) {
-                nearest = entity;
-                nearestDistance = distance;
+
+            // Check if entity is within 3 blocks
+            if (distance <= TRACKING_RADIUS) {
+                // Prioritize closest entity within radius
+                if (distance < nearestDistance) {
+                    // Optional: Check line of sight (can be removed for through-wall tracking)
+                    if (arrowLoc.getWorld().rayTraceBlocks(
+                            arrowLoc, entity.getLocation().toVector().subtract(arrowLoc.toVector()).normalize(),
+                            distance) == null) {
+                        nearest = entity;
+                        nearestDistance = distance;
+                    }
+                }
             }
         }
 
         return nearest;
+    }
+
+    private static void showTrackingLine(Location from, Location to, World world) {
+        // Create a visual line showing the tracking path
+        Vector direction = to.toVector().subtract(from.toVector());
+        double distance = direction.length();
+        direction.normalize();
+
+        // Spawn particles along the line
+        int particles = (int) (distance * 2);
+        for (int i = 0; i < particles; i++) {
+            double ratio = (double) i / particles;
+            Location particleLoc = from.clone().add(direction.clone().multiply(distance * ratio));
+            world.spawnParticle(Particle.ENCHANT, particleLoc, 1, 0, 0, 0, 0);
+        }
     }
 
     public static void onArrowHit(ProjectileHitEvent event) {
@@ -195,13 +261,12 @@ public class PowerBow {
         arrow.getWorld().playSound(hitLocation, Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 1.0f, 1.0f);
         arrow.getWorld().playSound(hitLocation, Sound.ENTITY_GENERIC_EXPLODE, 0.7f, 1.2f);
 
+        // Explosion particles
+        arrow.getWorld().spawnParticle(Particle.EXPLOSION, hitLocation, 5, 0.5, 0.5, 0.5, 0);
+        arrow.getWorld().spawnParticle(Particle.FLAME, hitLocation, 10, 0.5, 0.5, 0.5, 0.1);
+
         trackingArrows.remove(arrowId);
         arrow.remove();
-
-        if (arrow.getShooter() instanceof Player shooter) {
-            shooter.sendMessage("§6⚡ §lLightning Strike! §e" +
-                    (hitEntity != null ? "Hit " + hitEntity.getName() + "!" : "Target destroyed!"));
-        }
     }
 
     public static void clearTrackingArrows() {
